@@ -1,42 +1,42 @@
 <?php
 function redirection(){
-  
+    //remeber session
     /* Redirect browser */  
     header("Location: login.php");
 	}
-?>
+
+
+
+						if (!$polaczenie) {
 							echo "Błąd połączenia z MySQL." . PHP_EOL;
 							echo "Errno: " . mysqli_connect_errno() . PHP_EOL; echo "Error: " . mysqli_connect_error() . PHP_EOL; exit;
 						}
-		
+						$users = mysqli_query($polaczenie,"SELECT * FROM Users");
+						$usercheck = mysqli_fetch_array($users);
+						
+
 			$imie = $_POST['imie'];
 			$nazwisko = $_POST['nazwisko'];
 			$login = $_POST['login'];
 			$pass = $_POST['pass'];
 			
+			
 			if (IsSet($_POST['submit'])) {
-			mysqli_query($polaczenie,"INSERT INTO
-  Users (
-    `userid`,
-    `imie`,
-    `nazwisko`,
-    `login`,
-    `pass`
-  )
-VALUES
-  (
-    NULL,
-    '$imie',
-    '$nazwisko',
-    '$login',
-    '$pass'
-  )");
-
+				if($usercheck[3] !== $login){
+					
+				mkdir('./cloud/'.$login, 0777, true);
 				
-session_start();
-redirection();
-}
-		
+			mysqli_query($polaczenie,"INSERT INTO Users (`userid`,`imie`,`nazwisko`,`login`,`pass`)
+			VALUES (NULL,'$imie','$nazwisko','$login','$pass')");
+					
+				session_start();
+				redirection();
+				
+				}
+				else{
+					echo "Podany Login już istnieje w bazie";
+				}
+			}
 
 		
 		
