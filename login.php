@@ -1,10 +1,18 @@
 <?php 
+function redirection(){
+    //remeber session
+    /* Redirect browser */
+    header("Location: wyslij.php");
+	}
+session_unset();
+session_start();
 //echo $_SERVER['HTTP_USER_AGENT'] . "\n\n";
 
-$browser = get_browser(null,true);
-
-$przegladarka = $browser[parent];
-$system = $browser[platform];
+						$dbhost="serwer1812376.home.pl"; 
+						$dbuser="28879196_cloud"; 
+						$dbpassword="Dominik123123"; 
+						$dbname="28879196_cloud"; 
+		
 				function secure_input($data) {
 				$data = trim($data);
 				$data = stripslashes($data);
@@ -12,44 +20,72 @@ $system = $browser[platform];
 				return $data;
 			}
 				//secure_input(
+		if(isset($_POST['submit'])){
+		$login=secure_input($_POST['login']);
+		$pass=secure_input($_POST['pass']);
+		$ipaddress=$_SERVER["REMOTE_ADDR"];
+		$user_agent=$_SERVER["HTTP_USER_AGENT"];
+		
+		//BAZADANYCH POŁĄCZENIE I ZCZYTANIE WARTOŚCI
+		$polaczenie = mysqli_connect($dbhost,$dbuser,$dbpassword,$dbname);
+		if(!$polaczenie) {echo "Nie można połączyć z". mysqli_connect_errno()." ".mysqli_connect_error() ;}
+		
+		$rezultat = mysqli_query($polaczenie,"SELECT * FROM Users WHERE login ='$login' LIMIT 1");
+		
+		$wiersz = mysqli_fetch_array($rezultat);
 			
-if(isset($_POST["submit"])){  
-  
-if(!empty($_POST['login']) && !empty($_POST['pass'])) {  
-$login = $_POST['login'];
-$pass =  secure_input($_POST['pass']); 
-  	
-	$polaczenie = mysqli_connect($dbhost, $dbuser, $dbpassword, $dbname);
-						if (!$polaczenie) {
-							echo "Błąd połączenia z MySQL." . PHP_EOL;
-							echo "Errno: " . mysqli_connect_errno() . PHP_EOL; echo "Error: " . mysqli_connect_error() . PHP_EOL; exit;
-						}
-  
-mysqli_query($polaczenie, "SET NAMES 'utf8'"); // ustawienie polskich znaków
-$result = mysqli_query($polaczenie, "SELECT * FROM Users WHERE login='$login' AND pass='$pass'"); // pobranie z BD wiersza, w którym login=login z formularza
+		//SPRAWDZENIE WARTOSCI PROBY JESLI 1 TO JEST NAŁOŻONA BLOKADA JEŚLI 0 MOŻNA SIĘ LOGOWAĆ
+			
+		if($wiersz[5] == '1'){
+			
+				$odliczanie = mysqli_query($polaczenie,"SELECT COUNT(*) as COUNTALL FROM user_log WHERE ip_address LIKE '$ipaddress' AND time > (now() - interval 1 minute)");
+				while($zlicz=mysqli_fetch_array($odliczanie)){
+					$liczba_prob = $zlicz['COUNTALL'];
+				}
+			
+				if($liczba_prob > 2){
+					echo "<br/><span id='error'>Nałożono blokadę po 3 próbach zalogowania, odczekaj 10 min</span>";
+					
+				}elseif($liczba_prob == 0){
+					mysqli_query($polaczenie,"UPDATE Users SET proby = 0, time=now() WHERE login='$login'");
+					echo "<br/><span id='error'>Odświerz portal i zaloguj się ponownie</span>";
+					
+					
+				}
+			}
+		//LOGOWANIE ORAZ DODAWANIE WARTOSCI I PRÓB LOGOWANIA	
+		if($wiersz[4] === $pass){
+			mysqli_query($polaczenie,"UPDATE Users SET proby = 0 WHERE login='$login'");
+			mysqli_query($polaczenie,"INSERT INTO user_log (id,login,time,ip_address,u_agent,poprawnosc) VALUES (NULL,'$login',now(),'$ipaddress','$user_agent','Tak')");
+			
+	
+			$_SESSION["username"]=$login;
+			$_SESSION["user_id"]=$wiersz[0];
+			$_SESSION['logowanie']=0;
+			redirection();
+			
+			}else{
+				if(!isset($_SESSION['logowanie'])){
+					$logowanie=1;
+				}else{
+					$logowanie=$_SESSION['logowanie']+1;
+				}
+				echo "<br/><span id='error'>Błędne dane, próba $logowanie</span>";
 
-$rekord = mysqli_fetch_array($result);// wiersza z BD, struktura zmiennej jak w BD
-if(!$rekord) //Jeśli brak, to nie ma użytkownika o podanym loginie
-{
-mysqli_close($polaczenie); // zamknięcie połączenia z BD
-echo "Brak użytkownika o takim loginie !"; // UWAGA nie wyświetlamy takich podpowiedzi dla hakerów
-}
-else
-{ // Jeśli $rekord istnieje
-if($rekord['pass']==$pass & $rekord['login']==$login) // czy hasło zgadza się z BD
-{	
-session_start();
-redirection();
-}
-else
-{
-mysqli_close($polaczenie);
-echo "Błąd w haśle !"; // UWAGA nie wyświetlamy takich podpowiedzi dla hakerów
-}
-}  
-    
-}
-}		
+				$_SESSION['logowanie']=$logowanie;
+
+				mysqli_query($polaczenie,"INSERT INTO user_log (id,login,time,ip_address,u_agent,poprawnosc) VALUES (NULL,'$login',now(),'$ipaddress','$user_agent','Nie')");
+
+				if($logowanie === 3){
+					session_unset();
+					mysqli_query($polaczenie,"UPDATE Users SET proby = 1, time=now() WHERE login='$login'");
+					echo "<br/><span id='error'>Nałożono blokadę!</span>";
+				}
+		}
+			
+	}
+
+	
 		
 		?>
 		

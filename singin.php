@@ -7,6 +7,11 @@ function redirection(){
 
 
 
+						$dbhost="localhost"; 
+						$dbuser="28879196_cloud"; 
+						$dbpassword="Dominik123123"; 
+						$dbname="28879196_cloud"; 
+						$polaczenie = mysqli_connect($dbhost, $dbuser, $dbpassword, $dbname);
 						if (!$polaczenie) {
 							echo "Błąd połączenia z MySQL." . PHP_EOL;
 							echo "Errno: " . mysqli_connect_errno() . PHP_EOL; echo "Error: " . mysqli_connect_error() . PHP_EOL; exit;
@@ -24,6 +29,7 @@ function redirection(){
 			if (IsSet($_POST['submit'])) {
 				if($usercheck[3] !== $login){
 					
+					//tworzenie folderu
 				mkdir('./cloud/'.$login, 0777, true);
 				
 			mysqli_query($polaczenie,"INSERT INTO Users (`userid`,`imie`,`nazwisko`,`login`,`pass`)
@@ -31,11 +37,12 @@ function redirection(){
 					
 				session_start();
 				redirection();
-				
 				}
 				else{
 					echo "Podany Login już istnieje w bazie";
 				}
+				
+				
 			}
 
 		
